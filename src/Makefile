@@ -1,6 +1,7 @@
+#Getting from env the locations of the toolchain and compiled android source
 ANDROID_STANDALONE_TOOLCHAIN := $(shell echo $(ANDROID_STANDALONE_TOOLCHAIN))
 ANDROID_OUT_SYSTEM := $(shell echo $(ANDROID_OUT_SYSTEM))
-
+############################################################################
 
 CFLAGS += -Wall
 CPPFLAGS += $(shell pkg-config --cflags fuse)
