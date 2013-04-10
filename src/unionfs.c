@@ -19,7 +19,7 @@
 #endif
 
 #include <fuse.h>
-#include <fuse/fuse_common.h>
+#include <fuse_common.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <inttypes.h>
+#include <linux/statfs.h>
 #ifdef linux
 	#include <sys/vfs.h>
 #else
@@ -39,7 +40,7 @@
 #endif
 
 #ifdef HAVE_XATTR
-	#include <sys/xattr.h>
+	#include <linux/xattr.h>
 #endif
 
 #include "unionfs.h"

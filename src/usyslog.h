@@ -5,6 +5,7 @@
 
 #include <syslog.h>
 #include <stdbool.h>
+#include "pthread.h"
 
 #define MAX_SYSLOG_MESSAGES 32	// max number of buffered syslog messages
 #define MAX_MSG_SIZE 256	// max string length for syslog messages
