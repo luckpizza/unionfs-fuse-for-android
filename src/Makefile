@@ -16,7 +16,8 @@ LD = $(ANDROID_STANDALONE_TOOLCHAIN)/bin/arm-linux-androideabi-ld
 CC = $(ANDROID_STANDALONE_TOOLCHAIN)/bin/arm-linux-androideabi-gcc
 
 
-LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a -L$(ANDROID_OUT_SYSTEM)/lib 
+LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a -L$(ANDROID_OUT_SYSTEM)/lib/ /opt/SSD/rkonopka/cm10_test/target/product/tp971500dc/system/lib/libdl.so 
+#LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a -L$(ANDROID_OUT_SYSTEM)/lib 
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o \
