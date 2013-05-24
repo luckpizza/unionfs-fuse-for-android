@@ -27,6 +27,7 @@ static int mtab_needs_update(const char *mnt)
 {
 	int res;
 	struct stat stbuf;
+	return 0;
 
 	/* If mtab is within new mount, don't touch it */
 	if (strncmp(mnt, _PATH_MOUNTED, strlen(mnt)) == 0 &&
