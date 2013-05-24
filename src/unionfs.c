@@ -658,6 +658,10 @@ static int unionfs_truncate(const char *path, off_t size) {
 
 static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	DBG("%s\n", path);
+	
+	DBG("times in uionfs_utimens: utimens %s %li.%09lu %li.%09lu\n",
+				path, ts[0].tv_sec, ts[0].tv_nsec,
+				ts[1].tv_sec, ts[1].tv_nsec);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
 
@@ -668,7 +672,9 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
-
+	char command[PATHLEN_MAX + 7];
+	sprintf(command , "stat %s", p);
+	system(command);
 	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
