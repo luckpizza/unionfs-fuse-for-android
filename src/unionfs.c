@@ -673,8 +673,9 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 
 	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 	char command[PATHLEN_MAX + 7];
-	sprintf(command , "stat %s", p);
-	system(command);
+	
+	struct stat stat_info;
+	lstat(p, &stat_info);
 	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
