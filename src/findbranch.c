@@ -189,7 +189,12 @@ int find_rw_branch_cutlast(const char *path) {
  */
 int find_rw_branch_cow(const char *path) {
 	DBG("%s\n", path);
+	return find_rw_branch_cow_common(path, false);
+}
 
+int find_rw_branch_cow_common(const char* path, bool copy_dir) {
+
+	DBG("%s\n", path);
 	int branch_rorw = find_rorw_branch(path);
 
 	// not found anywhere
@@ -211,8 +216,7 @@ int find_rw_branch_cow(const char *path) {
 		RETURN(-1);
 	}
 
-	if (cow_cp(path, branch_rorw, branch_rw)) RETURN(-1);
-
+	if (cow_cp(path, branch_rorw, branch_rw, copy_dir))  RETURN(-1);
 	// remove a file that might hide the copied file
 	remove_hidden(path, branch_rw);
 
