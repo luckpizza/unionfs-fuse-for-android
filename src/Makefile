@@ -1,6 +1,5 @@
 #Getting from env the locations of the toolchain and compiled android source
 ANDROID_STANDALONE_TOOLCHAIN := $(shell echo $(ANDROID_STANDALONE_TOOLCHAIN))
-ANDROID_OUT_SYSTEM := $(shell echo $(ANDROID_OUT_SYSTEM))
 ############################################################################
 
 CFLAGS += -Wall
@@ -15,13 +14,8 @@ SYS_ROOT = $(ANDROID_STANDALONE_TOOLCHAIN)/sysroot
 LD = $(ANDROID_STANDALONE_TOOLCHAIN)/bin/arm-linux-androideabi-ld
 CC = $(ANDROID_STANDALONE_TOOLCHAIN)/bin/arm-linux-androideabi-gcc
 
-
-#LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a -L$(ANDROID_OUT_SYSTEM)/lib/ /opt/SSD/rkonopka/cm10_test/target/product/tp971500dc/system/lib/libdl.so 
-
-
-LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a   ../external-libs/libc.a ../external-libs/libdl.so
-#LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a /opt/SSD/rkonopka/cm10_test/target/product/tp971500dc/system/lib/libdl.so 
-#LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a  ~/devices/pndevice/IM_4.1.1_r1_for-MF/out/target/product/rk30sdk/obj/STATIC_LIBRARIES/libc_intermediates/libc.a -L$(ANDROID_OUT_SYSTEM)/lib 
+LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a   ../external-libs/libc.a $(ANDROID_STANDALONE_TOOLCHAIN)/sysroot/usr/lib/libdl.so
+#LDFLAGS =../fuse-android/obj/local/armeabi/libfuse.a   ../external-libs/libc.a ../external-libs/libdl.so $(ANDROID_STANDALONE_TOOLCHAIN)/sysroot/usr/lib/libdl.so
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o \
