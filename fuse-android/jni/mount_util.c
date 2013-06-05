@@ -23,11 +23,12 @@
 
 #include <paths.h>
 
+#define ANDROID_BUSYBOX 1
+
 static int mtab_needs_update(const char *mnt)
 {
 	int res;
 	struct stat stbuf;
-	return 0;
 
 	/* If mtab is within new mount, don't touch it */
 	if (strncmp(mnt, _PATH_MOUNTED, strlen(mnt)) == 0 &&
@@ -102,18 +103,26 @@ static int add_mount_legacy(const char *progname, const char *fsname,
 			exit(1);
 		}
 		rmdir(tmp);
-		execl("/bin/mount", "/bin/mount", "-i", "-f", "-t", type,
+#ifdef ANDROID_BUSYBOX		
+		res = execl("busybox", "busybox", "mount", "-i", "-f", "-t", type,
 		      "-o", opts, fsname, mnt, NULL);
-		fprintf(stderr, "%s: failed to execute /bin/mount: %s\n",
+#else
+		res = execl("/bin/mount", "/bin/mount", "-i", "-f", "-t", type,
+		      "-o", opts, fsname, mnt, NULL);
+#endif
+		fprintf(stderr, "%s: is trying to mount, error code: %s\n",
 			progname, strerror(errno));
-		exit(1);
+		exit(res);
 	}
 	res = waitpid(res, &status, 0);
 	if (res == -1)
 		fprintf(stderr, "%s: waitpid: %s\n", progname, strerror(errno));
-
-	if (status != 0)
-		res = -1;
+	else {
+		if (WIFEXITED(status)) 
+			res =  WEXITSTATUS(status);
+		else 
+			res = -1;
+	}
 
  out_restore:
 	sigprocmask(SIG_SETMASK, &oldmask, NULL);
@@ -153,18 +162,26 @@ static int add_mount(const char *progname, const char *fsname,
 
 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
 		setuid(geteuid());
-		execl("/bin/mount", "/bin/mount", "--no-canonicalize", "-i",
+#ifdef ANDROID_BUSYBOX		
+		res = execlp("busybox", "busybox","mount", "--no-canonicalize", "-i",
 		      "-f", "-t", type, "-o", opts, fsname, mnt, NULL);
-		fprintf(stderr, "%s: failed to execute /bin/mount: %s\n",
+#else
+		res = execl("/bin/mount", "/bin/mount", "--no-canonicalize", "-i",
+		      "-f", "-t", type, "-o", opts, fsname, mnt, NULL);
+#endif
+		fprintf(stderr, "%s: is trying to mount, error code: %s\n",
 			progname, strerror(errno));
-		exit(1);
+		exit(res);
 	}
 	res = waitpid(res, &status, 0);
 	if (res == -1)
 		fprintf(stderr, "%s: waitpid: %s\n", progname, strerror(errno));
-
-	if (status != 0)
-		res = -1;
+	else {
+		if (WIFEXITED(status)) 
+			res =  WEXITSTATUS(status);
+		else 
+			res = -1;
+	}
 
  out_restore:
 	sigprocmask(SIG_SETMASK, &oldmask, NULL);
