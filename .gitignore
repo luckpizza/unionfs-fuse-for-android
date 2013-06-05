@@ -2,3 +2,7 @@
 .hgignore
 .hgtags
 *.o
+fuse-android/obj/local/armeabi/objs-debug/*
+fuse-android/obj/local/armeabi/fusexmp
+fuse-android/libs/armeabi/fusexmp
+fuse-android/libs/armeabi/gdb.setup
