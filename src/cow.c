@@ -68,6 +68,55 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 }
 
 /**
+ *
+ * Sets a file/dir stat to it's original in the RO branch
+ *	path: relative path to the file/dir
+ *	nbranch_ro: number of the branch used as ro
+ * 	nbranch_rw: number of the branch used as rw
+*/
+int copy_ro_rw_stat(char * path, int nbranch_ro, int nbranch_rw)
+{
+	if (nbranch_ro == nbranch_rw) RETURN(0); // same file -> nothing to do here
+	
+	char ro_dir_path[PATHLEN_MAX]; // original dir path
+	char rw_dir_path[PATHLEN_MAX]; // dir path to create
+	sprintf(ro_dir_path, "%s%s", uopt.branches[nbranch_ro].path, path);
+	struct stat buf;
+	if (stat(ro_dir_path, &buf) == -1) RETURN(1);
+	sprintf(rw_dir_path, "%s%s", uopt.branches[nbranch_rw].path, path);
+	if (setfile(rw_dir_path, &buf))  RETURN(1); // directory already removed by another process?
+	RETURN(0);
+}
+
+/**
+ *
+ * Creates path in the rw branch recursively (allows to modify each new dir created easier)
+ * to create a full path, call this with path == walk !
+ * This version maintain the timestamps of all the path 
+ *	path: path to be created in the rw branch
+ *	walk: how "far" the copy has been done
+ *	nbranch_ro: number of branch used as ro
+ *	nbranch_rw: number of branch used as rw
+ */
+int path_create_by_step(const char * path , const char * walk, int nbranch_ro, int nbranch_rw)
+{
+	char p[PATHLEN_MAX];
+	while (*walk != '\0' && *walk == '/') walk++;
+	if(*walk == '\0')
+		RETURN(0);
+	while (*walk != '\0' && *walk != '/') walk++;
+	// +1 due to \0, which gets added automatically
+	snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
+	int res = do_create(p, nbranch_ro, nbranch_rw);
+	if (res) RETURN(res); // creating the directory failed
+	res = path_create_by_step(path, walk, nbranch_ro, nbranch_rw);
+	if (res) RETURN(res); 
+	res = copy_ro_rw_stat(p, nbranch_ro, nbranch_rw);	
+	RETURN(res); 
+}
+
+
+/**
  * l_nbranch (lower nbranch than nbranch) is write protected, create the dir path on
  * nbranch for an other COW operation.
  */
@@ -86,25 +135,11 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	}
 
 	char *walk = (char *)path;
-
-	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
-	while (*walk != '\0' && *walk == '/') walk++;
-
-	do {
-		// walk over the directory name, walk will now be /dir2
-		while (*walk != '\0' && *walk != '/') walk++;
-
-		// +1 due to \0, which gets added automatically
-		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
-		int res = do_create(p, nbranch_ro, nbranch_rw);
-		if (res) RETURN(res); // creating the directory failed
-
-		// as above the do loop, walk over the next slashes, walk = dir2/
-		while (*walk != '\0' && *walk == '/') walk++;
-	} while (*walk != '\0');
-
-	RETURN(0);
+	
+	int res = path_create_by_step(path, walk,  nbranch_ro, nbranch_rw);
+	RETURN(res);
 }
+
 
 /**
  * Same as  path_create(), but ignore the last segment in path,
@@ -122,6 +157,7 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 	RETURN(ret);
 }
 
+
 /**
  * initiate the cow-copy action
  */
@@ -133,9 +169,9 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path))
-		RETURN(-ENAMETOOLONG);
+	       RETURN(-ENAMETOOLONG);
 	if (BUILD_PATH(to, uopt.branches[branch_rw].path, path))
-		RETURN(-ENAMETOOLONG);
+	       RETURN(-ENAMETOOLONG);
 
 	setlocale(LC_ALL, "");
 
@@ -156,32 +192,33 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 
 	int res;
 	switch (buf.st_mode & S_IFMT) {
-		case S_IFLNK:
-			res = copy_link(&cow);
-			break;
-		case S_IFDIR:
-			if (copy_dir) {
-                        	res = copy_directory(path, branch_ro, branch_rw);
-                      	} else {
-                               res = path_create(path, branch_ro, branch_rw);
-			}
-			break;
-		case S_IFBLK:
-		case S_IFCHR:
-			res = copy_special(&cow);
-			break;
-		case S_IFIFO:
-			res = copy_fifo(&cow);
-			break;
-		case S_IFSOCK:
-			USYSLOG(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
-			RETURN(1);
-		default:
-			res = copy_file(&cow);
+	       case S_IFLNK:
+		       res = copy_link(&cow);
+		       break;
+	       case S_IFDIR:
+		       if (copy_dir) {
+			       res = copy_directory(path, branch_ro, branch_rw);
+		       } else {
+			      res = path_create(path, branch_ro, branch_rw);
+		       }
+		       break;
+	       case S_IFBLK:
+	       case S_IFCHR:
+		       res = copy_special(&cow);
+		       break;
+	       case S_IFIFO:
+		       res = copy_fifo(&cow);
+		       break;
+	       case S_IFSOCK:
+		       USYSLOG(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
+		       RETURN(1);
+	       default:
+		       res = copy_file(&cow);
 	}
 
 	RETURN(res);
 }
+
 
 /**
  * copy a directory between branches (includes all contents of the directory)
@@ -211,11 +248,14 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 			res = 1;
 			break;
 		}
-		res = cow_cp(member, branch_ro, branch_rw, true);		
+		res = cow_cp(member, branch_ro, branch_rw, true);               
 		if (res != 0) break;
 	}
 
 	closedir(dp);
+	struct stat  buf;
+	lstat(from, &buf);
+	setfile(from, &buf);
 	RETURN(res);
 }
 
