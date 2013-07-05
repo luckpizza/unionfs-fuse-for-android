@@ -32,10 +32,11 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <inttypes.h>
-#include <linux/statfs.h>
+#include "linux/my_statfs.h"
 #ifdef linux
 	#include <sys/vfs.h>
 #else
+	#include <linux/statfs.h>
 	#include <sys/statvfs.h>
 #endif
 
