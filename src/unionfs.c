@@ -515,28 +515,30 @@ static int unionfs_rename(const char *from, const char *to) {
  * TODO: BSD/MacOSX
  */
 static int statvfs_local(const char *path, struct statvfs *stbuf) {
+	DBG("in statvfs_local(uopt.branches[i].path, &stb) with path :%s \n", path);
 #ifdef linux
 	/* glibc's statvfs walks /proc/mounts and stats entries found there
 	 * in order to extract their mount flags, which may deadlock if they
 	 * are mounted under the unionfs. As a result, we have to do this
 	 * ourselves.
 	 */
-	struct statfs stfs;
-	int res = statfs(path, &stfs);
+	struct statfs* stfs;
+	stfs = malloc(sizeof(statfs) * 1000);
+	int res = statfs(path, stfs);
 	if (res == -1) RETURN(res);
-
+	DBG("before memset \n");
 	memset(stbuf, 0, sizeof(*stbuf));
-	stbuf->f_bsize = stfs.f_bsize;
-	if (stfs.f_frsize)
-		stbuf->f_frsize = stfs.f_frsize;
+	stbuf->f_bsize = stfs->f_bsize;
+	if (stfs->f_frsize)
+		stbuf->f_frsize = stfs->f_frsize;
 	else
-		stbuf->f_frsize = stfs.f_bsize;
-	stbuf->f_blocks = stfs.f_blocks;
-	stbuf->f_bfree = stfs.f_bfree;
-	stbuf->f_bavail = stfs.f_bavail;
-	stbuf->f_files = stfs.f_files;
-	stbuf->f_ffree = stfs.f_ffree;
-	stbuf->f_favail = stfs.f_ffree; /* nobody knows */
+		stbuf->f_frsize = stfs->f_bsize;
+	stbuf->f_blocks = stfs->f_blocks;
+	stbuf->f_bfree = stfs->f_bfree;
+	stbuf->f_bavail = stfs->f_bavail;
+	stbuf->f_files = stfs->f_files;
+	stbuf->f_ffree = stfs->f_ffree;
+	stbuf->f_favail = stfs->f_ffree; /* nobody knows */
 
 	/* We don't worry about flags, exactly because this would
 	 * require reading /proc/mounts, and avoiding that and the
@@ -544,7 +546,8 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 	 * by doing this rather than using statvfs.
 	 */
 	stbuf->f_flag = 0;
-	stbuf->f_namemax = stfs.f_namelen;
+	stbuf->f_namemax = stfs->f_namelen;
+	DBG("finishing  statvfs_local(uopt.branches[i].path, &stb) \n");
 
 	RETURN(0);
 #else
@@ -569,18 +572,25 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	dev_t devno[uopt.nbranches];
 
 	int i = 0;
+	DBG("Going to enter for \n");
 	for (i = 0; i < uopt.nbranches; i++) {
+		DBG("Branches: %d \n ", uopt.nbranches);
 		struct statvfs stb;
 		int res = statvfs_local(uopt.branches[i].path, &stb);
+		DBG("out of  statvfs_local(uopt.branches[i].path, &stb) with return :%d \n", res);
 		if (res == -1) continue;
 
 		struct stat st;
+		DBG("going in: stat(uopt.branches[i].path, &st)");
 		res = stat(uopt.branches[i].path, &st);
+		DBG("rta of: stat(uopt.branches[i].path, &st) = %d", res);
 		if (res == -1) continue;
 		devno[i] = st.st_dev;
 
 		if (first) {
+			DBG("we are first, doing: memcpy(stbuf, &stb, sizeof(*stbuf));");
 			memcpy(stbuf, &stb, sizeof(*stbuf));
+			DBG("memcpy done");
 			first = 0;
 			stbuf->f_fsid = stb.f_fsid << 8;
 			continue;

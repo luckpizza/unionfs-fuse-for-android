@@ -35,7 +35,7 @@
 __BEGIN_DECLS
 
 /* note: this corresponds to the kernel's statfs64 type */
-/*struct statfs {
+struct statfs {
     uint32_t        f_type;
     uint32_t        f_bsize;
     uint64_t        f_blocks;
@@ -48,7 +48,7 @@ __BEGIN_DECLS
     uint32_t        f_frsize;
     uint32_t        f_spare[5];
 };
-*/
+
 #define  ADFS_SUPER_MAGIC      0xadf5
 #define  AFFS_SUPER_MAGIC      0xADFF
 #define  BEFS_SUPER_MAGIC      0x42465331
